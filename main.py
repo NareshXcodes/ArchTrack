@@ -8,12 +8,24 @@ from app.models.projects import Project
 from app.models.tags import Tag , DecisionTag
 from app.models.users import User
 from app.models.votes import Vote
-from app.routers import auth , Projects, Decisions, Options
+from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes
 
 Base.metadata.create_all(bind=engine)
 
 
 app = FastAPI()
+
+@app.get("/")
+def root():
+    return {"message" : "Welcome to the ADR Manager APP"}
+
+app.include_router(auth.router)
+app.include_router(Projects.router)
+app.include_router(Decisions.router)
+app.include_router(Options.router)
+app.include_router(Votes.router)
+app.include_router(Comments.router)
+app.include_router(Tags.router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,12 +37,3 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-@app.get("/")
-def root():
-    return {"message" : "Welcome to the ADR Manager APP"}
-
-app.include_router(auth.router)
-app.include_router(Projects.router)
-app.include_router(Decisions.router)
-app.include_router(Options.router)

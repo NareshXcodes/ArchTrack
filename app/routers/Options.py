@@ -9,7 +9,7 @@ from app.models.options import Option
 
 router = APIRouter(tags=['Options'])
 
-@router.post("/decisions/{decisions_id}/options",response_model=OptionResponse,status_code=status.HTTP_201_CREATED)
+@router.post("/decisions/{decision_id}/options",response_model=OptionResponse,status_code=status.HTTP_201_CREATED)
 def adding_option(decision_id:int,new_option:OptionCreate,db:SessionDB,current_user: User = Depends(get_current_user)):
     query = db.query(Decision).filter(Decision.id == decision_id)
     fetch_decision = query.first()

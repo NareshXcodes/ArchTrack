@@ -1,5 +1,5 @@
 from app.db.database import SessionDB
-from app.schemas.decision import DecisionResponse, DecisionDetailResponse,DecisionUpdate
+from app.schemas.decision import DecisionCreate, DecisionResponse, DecisionDetailResponse,DecisionUpdate
 from app.schemas.option import OptionWithVotes
 from app.schemas.comment import CommentResponse
 from app.schemas.tag import TagResponse
@@ -9,15 +9,99 @@ from app.utils.oauth2 import get_current_user
 from app.models.users import User
 from app.models.decisions import Decision, StatusEnum
 from app.models.votes import Vote
+from app.models.tags import DecisionTag , Tag
+from app.models.projects import Project
 from datetime import datetime , timezone
 from sqlalchemy import func
 from app.utils.workflow import validate_transition
+from typing import List, Optional
+
+router = APIRouter(tags=['Decisions'])
+
+@router.post("/projects/{project_id}/decisions", response_model=DecisionResponse ,status_code=status.HTTP_201_CREATED)
+def create_decision(project_id:int, new_decision : DecisionCreate,db:SessionDB,current_user: User = Depends(get_current_user)):
+    project_data = db.query(Project).filter(Project.id == project_id).first()
+
+    if not project_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project Not Found"
+        )
+
+    if project_data.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not Authorized"
+        )
+
+    decision = Decision(
+        title=new_decision.title,
+        context=new_decision.context,
+        decision_made=new_decision.decision_made,
+        consequences=new_decision.consequences,
+        project_id=project_data.id,
+        author_id=current_user.id
+    )
+
+    db.add(decision)
+    db.flush()
+
+    for tag_name in new_decision.tags:
+        tag_name = tag_name.strip().lower()
+        tag = db.query(Tag).filter(Tag.name == tag_name).first()
+
+        if not tag:
+            tag = Tag(name=tag_name)
+            db.add(tag)
+            db.flush()
+
+        decision_tag = DecisionTag(decision_id = decision.id, tag_id = tag.id)
+
+        db.add(decision_tag)
+
+    db.commit()
+    db.refresh(decision)
+    return decision
 
 
-router = APIRouter(prefix="/decisions",tags=['Decision'])
+@router.get("/projects/{project_id}/decisions",response_model=List[DecisionResponse])
+def all_decisions(project_id:int,db:SessionDB,tags: Optional[str] = None, decision_status: Optional[str]= None,current_user: User = Depends(get_current_user)):
+    project_data = db.query(Project).filter(Project.id == project_id, Project.owner_id == current_user.id).first()
+    
+    if not project_data:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project Not Found"
+        )
+    
+    query = db.query(Decision).filter(Decision.project_id == project_id)
+
+    if decision_status:
+        valid_status=[
+            "proposed",
+            "under_review",
+            "accepted",
+            "deprecated",
+            "superseded"
+        ]
+
+        decision_status = decision_status.lower()
+        if decision_status not in valid_status:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Status value Invalid"
+            )
+        
+        query = query.filter(Decision.status == decision_status)
+
+    if tags:
+        query =  query.join(Decision.tags).filter(Tag.name == tags.lower())
+
+    all_decision = query.all()
+    return all_decision
 
 
-@router.get("/{id}",response_model=DecisionDetailResponse)
+@router.get("/decisions/{id}",response_model=DecisionDetailResponse)
 def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_current_user)):
     fetch_decision = db.query(Decision).filter(Decision.id == id).first()
 
@@ -81,7 +165,7 @@ def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_c
     )
 
 
-@router.put("/{id}",response_model=DecisionResponse)
+@router.put("/decisions/{id}",response_model=DecisionResponse)
 def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,current_user: User = Depends(get_current_user)):
     query = db.query(Decision).filter(Decision.id == id)
     update_fetch_decision = query.first()
@@ -111,7 +195,7 @@ def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,curr
     return update_fetch_decision
     
 
-@router.patch("/{id}/status",response_model=DecisionResponse)
+@router.patch("/decisions/{id}/status",response_model=DecisionResponse)
 def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,current_user: User = Depends(get_current_user)):
     query = db.query(Decision).filter(Decision.id == id)
     fetch_update_decision = query.first()
@@ -139,7 +223,7 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
     return fetch_update_decision
 
 
-@router.delete("/{id}",status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/decisions/{id}",status_code=status.HTTP_204_NO_CONTENT)
 def delete_decision(id:int,db:SessionDB,current_user: User = Depends(get_current_user)):
     query = db.query(Decision).filter(Decision.id == id)
     fetch_decision = query.first()
