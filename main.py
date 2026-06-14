@@ -8,7 +8,7 @@ from app.models.projects import Project
 from app.models.tags import Tag , DecisionTag
 from app.models.users import User
 from app.models.votes import Vote
-from app.routers import auth , Projects
+from app.routers import auth , Projects, Decisions, Options
 
 Base.metadata.create_all(bind=engine)
 
@@ -32,3 +32,5 @@ def root():
 
 app.include_router(auth.router)
 app.include_router(Projects.router)
+app.include_router(Decisions.router)
+app.include_router(Options.router)

@@ -10,4 +10,7 @@ ALLOWED_TRANSITIONS = {
 
 def validate_transition(current:str,new:str):
     if new not in ALLOWED_TRANSITIONS[current]:
-        raise HTTPException(status_code=400, detail="Invalid transition")
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid transition from {current} to {new}"
+        )

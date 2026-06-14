@@ -4,9 +4,9 @@ from datetime import datetime
 
 class OptionBase(BaseModel):
     title: str
-    description: Optional[str]
-    pros : Optional[str]
-    cons : Optional[str]
+    description: Optional[str] = None
+    pros : Optional[str] = None
+    cons : Optional[str] = None
 
 class OptionCreate(OptionBase):
     pass
