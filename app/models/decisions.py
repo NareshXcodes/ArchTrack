@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped , mapped_column, relationship
-from sqlalchemy import Integer , DateTime , func, String, ForeignKey, Text
+from sqlalchemy import Integer , DateTime , func, String, ForeignKey, Text , UniqueConstraint
 from app.db.database import Base
 from datetime import datetime
 from enum import Enum as PyEnum
@@ -12,6 +12,29 @@ class StatusEnum(str,PyEnum):
     accepted = "accepted"
     deprecated = "deprecated"
     suspended = "suspended"
+
+
+class DecisionReviewer(Base):
+    __tablename__ = "decision_reviewers"
+
+    decision_id : Mapped[int] = mapped_column(
+        ForeignKey("decisions.id",ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    reviewer_id : Mapped[int] = mapped_column(
+        ForeignKey("users.id",ondelete="CASCADE"),
+        primary_key=True
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "decision_id",
+            "reviewer_id",
+            name="uq_decision_review"
+        ),
+    )
+
 
 class Decision(Base):
     __tablename__ = "decisions"
@@ -89,4 +112,10 @@ class Decision(Base):
         "Vote",
         back_populates="decision",
         cascade="all, delete-orphan"
+    )
+
+    reviewers: Mapped[list["User"]] = relationship(
+        "User",
+        secondary="decision_reviewers",
+        back_populates="assigned_decisions"
     )

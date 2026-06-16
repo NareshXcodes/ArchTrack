@@ -1,7 +1,15 @@
 from pydantic import BaseModel , ConfigDict
 from datetime import datetime
 from pydantic import EmailStr
-from typing import Optional
+from typing import Optional , Literal
+
+Role = Literal[
+    "admin",
+    "architect",
+    "reviewer",
+    "developer"
+]
+
 
 class UserCreate(BaseModel):
     email : EmailStr
@@ -11,6 +19,7 @@ class UserResponse(BaseModel):
     id : int
     email : EmailStr
     created_at : datetime
+    role : Role
     model_config = ConfigDict(from_attributes = True)
 	
 class TokenResponse(BaseModel):

@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped , mapped_column, relationship
-from sqlalchemy import Integer , DateTime , func, String, ForeignKey
+from sqlalchemy import Integer , String, ForeignKey
 from app.db.database import Base
 from typing import List
 
