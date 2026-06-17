@@ -45,4 +45,10 @@ class User(Base):
         back_populates="reviewers"
     )
 
+    review_comments : Mapped[List["ReviewComment"]] = relationship(
+        "ReviewComment",
+        back_populates="reviewer",
+        cascade="all, delete-orphan"
+    )
+
 

@@ -15,11 +15,12 @@ from datetime import datetime , timezone
 from sqlalchemy import func
 from app.utils.workflow import validate_transition
 from typing import List, Optional
+from app.utils.permissions import ARCHITECTS
 
 router = APIRouter(tags=['Decisions'])
 
 @router.post("/projects/{project_id}/decisions", response_model=DecisionResponse ,status_code=status.HTTP_201_CREATED)
-def create_decision(project_id:int, new_decision : DecisionCreate,db:SessionDB,current_user: User = Depends(get_current_user)):
+def create_decision(project_id:int, new_decision : DecisionCreate,db:SessionDB,current_user: User = Depends(ARCHITECTS)):
     project_data = db.query(Project).filter(Project.id == project_id).first()
 
     if not project_data:
@@ -166,7 +167,7 @@ def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_c
 
 
 @router.put("/decisions/{id}",response_model=DecisionResponse)
-def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,current_user: User = Depends(get_current_user)):
+def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,current_user: User = Depends(ARCHITECTS)):
     query = db.query(Decision).filter(Decision.id == id)
     update_fetch_decision = query.first()
     if not update_fetch_decision:
@@ -175,7 +176,7 @@ def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,curr
             detail="Decision not Found"
         )
 
-    if update_fetch_decision.author_id != current_user.id:
+    if current_user.role == "architect" and update_fetch_decision.author_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not Authorized"
@@ -205,16 +206,44 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
             status_code=status.HTTP_404_NOT_FOUND,
             detail="decision not found"
         )
-
-    if current_user.id != fetch_update_decision.author_id:
+    current_status = fetch_update_decision.status.value
+    new_status = updated_status.status
+    if current_user.role == "admin":
+        #bypass the any to any
+        fetch_update_decision.status = StatusEnum(new_status)
+    elif current_user.role == "architect":
+        # proposed -> under_review
+        # rejected -> proposed
+        if current_user.id != fetch_update_decision.author_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Not Authorized"
+            )
+        if current_status == "proposed" or current_status == "rejected":
+            validate_transition(current_status,new_status)
+            fetch_update_decision.status = StatusEnum(new_status)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Architect cannot perform this transition"
+            )
+    elif current_user.role == "reviewer":
+        #under_review -> accepted
+        #under_review -> rejected
+        if current_status == "under_review" and new_status != "proposed":
+            validate_transition(current_status,new_status)
+            fetch_update_decision.status = StatusEnum(new_status)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Reviewer cannot perform this transition"
+            )
+    else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not Authorized"
+            detail="Insufficient permissions"
         )
 
-    validate_transition(fetch_update_decision.status.value,updated_status.status)
-
-    fetch_update_decision.status = StatusEnum(updated_status.status)
     fetch_update_decision.updated_at = datetime.now(timezone.utc)
 
     db.commit()

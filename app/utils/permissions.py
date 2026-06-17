@@ -1,5 +1,4 @@
 from fastapi import Depends, HTTPException, status
-from app.db.database import SessionDB
 from .oauth2 import get_current_user
 from app.models.users import User
 

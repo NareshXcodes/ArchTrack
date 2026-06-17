@@ -12,6 +12,7 @@ class StatusEnum(str,PyEnum):
     accepted = "accepted"
     deprecated = "deprecated"
     suspended = "suspended"
+    rejected = "rejected"
 
 
 class DecisionReviewer(Base):
@@ -118,4 +119,10 @@ class Decision(Base):
         "User",
         secondary="decision_reviewers",
         back_populates="assigned_decisions"
+    )
+
+    review_comments : Mapped[List["ReviewComment"]] = relationship(
+        "ReviewComment",
+        back_populates="decision",
+        cascade="all, delete-orphan"
     )

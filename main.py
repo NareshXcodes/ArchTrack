@@ -2,14 +2,15 @@ from fastapi import FastAPI , Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine , Base
 from app.models.comments import Comment
-from app.models.decisions import Decision
+from app.models.decisions import Decision, DecisionReviewer
 from app.models.options import Option
 from app.models.projects import Project
 from app.models.tags import Tag , DecisionTag
 from app.models.users import User
 from app.models.votes import Vote
+from app.models.reviewcomments import ReviewComment
 from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes
-from app.utils.permissions import ADMIN_ONLY , require_role
+from app.utils.permissions import ADMIN_ONLY
 
 Base.metadata.create_all(bind=engine)
 

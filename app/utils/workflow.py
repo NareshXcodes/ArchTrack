@@ -1,11 +1,12 @@
 from fastapi import HTTPException
 
 ALLOWED_TRANSITIONS = {
-    "proposed" : ["under_review"],
-    "under_review" : ["accepted","proposed"],
-    "accepted" : ["deprecated","superseded"],
-    "deprecated" : [],
-    "superseded" : []
+    "proposed":     ["under_review"],
+    "under_review": ["accepted", "rejected", "proposed"],
+    "accepted":     ["deprecated", "superseded"],
+    "rejected":     ["proposed"],   # can be revised and resubmitted
+    "deprecated":   [],
+    "superseded":   []
 }
 
 def validate_transition(current:str,new:str):
