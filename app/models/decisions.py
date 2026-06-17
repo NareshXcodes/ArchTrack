@@ -28,6 +28,17 @@ class DecisionReviewer(Base):
         primary_key=True
     )
 
+    assigned_by : Mapped[int] = mapped_column(
+        ForeignKey("users.id",ondelete="CASCADE"),
+        nullable=False
+    )
+
+    assigned_at : Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False
+    )
+
     __table_args__ = (
         UniqueConstraint(
             "decision_id",
