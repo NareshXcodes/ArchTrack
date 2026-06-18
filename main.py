@@ -9,7 +9,7 @@ from app.models.tags import Tag , DecisionTag
 from app.models.users import User
 from app.models.votes import Vote
 from app.models.reviewcomments import ReviewComment
-from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes
+from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes,ReviewerAssignments
 from app.utils.permissions import ADMIN_ONLY
 
 Base.metadata.create_all(bind=engine)
@@ -37,6 +37,7 @@ app.include_router(Options.router)
 app.include_router(Votes.router)
 app.include_router(Comments.router)
 app.include_router(Tags.router)
+app.include_router(ReviewerAssignments.router)
 
 app.add_middleware(
     CORSMiddleware,

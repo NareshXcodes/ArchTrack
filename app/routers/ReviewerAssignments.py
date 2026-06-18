@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status,Response
 from app.db.database import SessionDB
-from app.utils.oauth2 import get_current_user
 from app.models.users import User
 from app.models.decisions import DecisionReviewer , Decision
 from app.models.reviewcomments import ReviewComment
-from app.utils.permissions import ARCHITECTS
-from app.schemas.ReviewerAssignment import AssignReviewer,AssignReviewerResponse
+from app.utils.permissions import ARCHITECTS,REVIEWERS, ALL_ROLES
+from app.schemas.ReviewerAssignment import AssignReviewer,AssignReviewerResponse, ReviewCreate, ReviewResponse
+from typing import List
 
 router = APIRouter(tags=['Reviewer Assignment'])
 
@@ -81,3 +81,57 @@ def remove_reviewer(id:int,reviewer_id:int,db:SessionDB,current_user=Depends(ARC
     return Response(
         status_code=status.HTTP_204_NO_CONTENT
     )
+
+@router.post("/decisions/{id}/review",response_model=ReviewResponse,status_code=status.HTTP_201_CREATED)
+def submit_verdict(id:int, db:SessionDB,new_review:ReviewCreate,current_user:User = Depends(REVIEWERS)):
+    fetch_decision = db.query(Decision).filter(Decision.id == id).first()
+    if not fetch_decision:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Decision not Found"
+        )
+
+    if fetch_decision.status.value != "under_review":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Decision is not under review"
+        )
+    
+    assignment = db.query(DecisionReviewer).filter(DecisionReviewer.decision_id == id , DecisionReviewer.reviewer_id == current_user.id).first()
+    if not assignment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only assigned Reviewer can review"
+        )
+
+    existing_review = db.query(ReviewComment).filter(ReviewComment.decision_id == id , ReviewComment.reviewer_id == current_user.id).first()
+    if existing_review:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Review already submitted"
+        )
+
+    review = ReviewComment(
+        body = new_review.body,
+        verdict = new_review.verdict,
+        decision_id = id,
+        reviewer_id = current_user.id
+    )
+
+    db.add(review)
+    db.commit()
+    db.refresh(review)
+    return review
+
+@router.get("/decisions/{id}/reviews",response_model=List[ReviewResponse])
+def fetch_all_reviews_verdicts(id:int,db:SessionDB,current_user:User = Depends(ALL_ROLES)):
+    fetch_decision = db.query(Decision).filter(Decision.id == id).first()
+    if not fetch_decision:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Decision not Found"
+        )
+
+    fetch_review = db.query(ReviewComment).filter(ReviewComment.decision_id == id).all()
+
+    return fetch_review

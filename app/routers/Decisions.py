@@ -209,8 +209,10 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
     current_status = fetch_update_decision.status.value
     new_status = updated_status.status
     if current_user.role == "admin":
-        #bypass the any to any
-        fetch_update_decision.status = StatusEnum(new_status)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Use /admin/decisions/{id}/override"
+        )
     elif current_user.role == "architect":
         # proposed -> under_review
         # rejected -> proposed

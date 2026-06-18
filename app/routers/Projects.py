@@ -22,12 +22,12 @@ def createProject(db:SessionDB,new_project : ProjectCreate,current_user: User = 
     return new_project
 
 @router.get("/projects/",response_model=List[ProjectResponse])
-def all_project(db:SessionDB,current_user: User = Depends(get_current_user)):
+def all_projects(db:SessionDB,current_user: User = Depends(get_current_user)):
     projects = db.query(Project).filter(Project.owner_id == current_user.id).all()
     return projects
 
 @router.get("/projects/{id}",response_model=ProjectResponse)
-def get_projects(id: int ,db:SessionDB,current_user: User = Depends(get_current_user)):
+def get_project(id: int ,db:SessionDB,current_user: User = Depends(get_current_user)):
     project = db.query(Project).filter(Project.id == id).first()
 
     if not project:

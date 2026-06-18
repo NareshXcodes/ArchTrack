@@ -14,6 +14,7 @@ Role = Literal[
 class UserCreate(BaseModel):
     email : EmailStr
     password : str
+    role : Optional[Role] = "developer"
 
 class UserResponse(BaseModel):
     id : int

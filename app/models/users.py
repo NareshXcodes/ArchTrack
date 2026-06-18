@@ -51,4 +51,9 @@ class User(Base):
         cascade="all, delete-orphan"
     )
 
+    audit_logs: Mapped[List["DecisionAudit"]] = relationship(
+        "DecisionAudit",
+        back_populates="changed_by_user"
+    )
+
 
