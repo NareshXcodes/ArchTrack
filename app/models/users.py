@@ -56,4 +56,12 @@ class User(Base):
         back_populates="changed_by_user"
     )
 
+    invites_sent: Mapped[list["Invite"]] = relationship(
+        "Invite",
+        back_populates="inviter"
+    )
 
+    team : Mapped["Team"] = relationship(
+        "Team",
+        back_populates="members"
+    )

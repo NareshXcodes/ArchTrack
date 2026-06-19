@@ -4,7 +4,8 @@ from pydantic import EmailStr
 from typing import Optional , Literal
 
 Role = Literal[
-    "admin",
+    "org_admin"
+    "team_admin",
     "architect",
     "reviewer",
     "developer"

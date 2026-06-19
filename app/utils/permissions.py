@@ -13,8 +13,8 @@ def require_role(*roles: str):
         return current_user
     return role_checker
 
-
-ADMIN_ONLY = require_role("admin")
-ARCHITECTS = require_role("admin","architect")
-REVIEWERS = require_role("admin","reviewer")
-ALL_ROLES = require_role("admin","architect","reviewer","developer")
+ORG_ADMIN_ONLY = require_role("org_admin")
+TEAM_ADMINS = require_role("org_admin", "team_admin")
+ARCHITECTS = require_role("org_admin","team_admin","architect")
+REVIEWERS = require_role("org_admin","team_admin","reviewer")
+ALL_ROLES = require_role("org_admin","team_admin","architect","reviewer","developer")
