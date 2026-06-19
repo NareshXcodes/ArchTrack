@@ -19,9 +19,9 @@ class Project(Base):
     )
     __table_args__ = (
             UniqueConstraint(
-            "owner_id",
+            "team_id",
             "name",
-            name= "uq_name_user"
+            name= "uq_project_name_team"
         ),
     )
 
@@ -29,6 +29,18 @@ class Project(Base):
     owner_id : Mapped[int] = mapped_column(
         ForeignKey("users.id",ondelete="CASCADE"),
         nullable=False
+    )
+
+    org_id : Mapped[int] = mapped_column(
+        ForeignKey("organizations.id",ondelete="CASCADE"),
+        nullable=False,
+        index=True
+    )
+
+    team_id : Mapped[int] = mapped_column(
+        ForeignKey("teams.id",ondelete="CASCADE"),
+        nullable=False,
+        index=True
     )
 
     owner : Mapped["User"] = relationship(
@@ -41,3 +53,14 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan"
     )
+
+    organization : Mapped["Organization"] = relationship(
+        "Organization",
+        back_populates="projects"
+    ) 
+
+    team : Mapped["Team"] = relationship(
+        "Team",
+        back_populates="projects"
+    )
+

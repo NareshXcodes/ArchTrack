@@ -49,3 +49,8 @@ class Team(Base):
         "Invite",
         back_populates="team"
     )
+
+    projects : Mapped[List["Project"]] = relationship(
+        "Project",
+        back_populates="team"
+    )

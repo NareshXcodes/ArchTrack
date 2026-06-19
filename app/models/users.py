@@ -1,4 +1,5 @@
-from sqlalchemy import Integer , String , DateTime , func
+from colorama import Fore
+from sqlalchemy import ForeignKey, Integer , String , DateTime , func
 from sqlalchemy.orm import Mapped , mapped_column, relationship
 from datetime import datetime
 from typing import List 
@@ -14,6 +15,18 @@ class User(Base):
     created_at : Mapped[datetime] = mapped_column(
         DateTime(timezone=True) , 
         server_default = func.now()
+    )
+
+    org_id : Mapped[int] = mapped_column(
+        ForeignKey("organizations.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True
+    )
+
+    team_id : Mapped[int] = mapped_column(
+        ForeignKey("teams.id",ondelete="SET NULL"),
+        nullable=True,
+        index=True
     )
 
     comments: Mapped[list["Comment"]] = relationship(
@@ -64,4 +77,9 @@ class User(Base):
     team : Mapped["Team"] = relationship(
         "Team",
         back_populates="members"
+    )
+
+    organization: Mapped["Organization"] = relationship(
+        "Organization",
+        back_populates="users"
     )
