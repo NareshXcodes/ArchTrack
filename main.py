@@ -1,16 +1,21 @@
 from fastapi import FastAPI , Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine , Base
-from app.models.comments import Comment
-from app.models.decisions import Decision, DecisionReviewer
-from app.models.options import Option
+
+#models
+from app.models.organizations import Organization
+from app.models.teams import Team
+from app.models.users import User
+from app.models.invites import Invite
 from app.models.projects import Project
 from app.models.tags import Tag , DecisionTag
-from app.models.users import User
+from app.models.decisions import Decision, DecisionReviewer
+from app.models.options import Option
 from app.models.votes import Vote
+from app.models.comments import Comment
 from app.models.reviewcomments import ReviewComment
+from app.models.decisionaudits import DecisionAudit
 from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes,ReviewerAssignments
-from app.utils.permissions import ADMIN_ONLY
 
 Base.metadata.create_all(bind=engine)
 
@@ -20,14 +25,6 @@ app = FastAPI()
 @app.get("/")
 def root():
     return {"message" : "Welcome to the ADR Manager APP"}
-
-@app.get("/test/role")
-def admin_role(current_user = Depends(ADMIN_ONLY)):
-    return {
-        "message": "Access granted",
-        "user_id": current_user.id,
-        "role": current_user.role
-    }
 
 
 app.include_router(auth.router)
