@@ -1,7 +1,6 @@
 from fastapi import FastAPI , Depends
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import engine , Base
-
 #models
 from app.models.organizations import Organization
 from app.models.teams import Team

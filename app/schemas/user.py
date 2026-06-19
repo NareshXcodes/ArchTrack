@@ -1,3 +1,5 @@
+from re import I
+
 from pydantic import BaseModel , ConfigDict
 from datetime import datetime
 from pydantic import EmailStr
@@ -22,6 +24,10 @@ class UserResponse(BaseModel):
     email : EmailStr
     created_at : datetime
     role : Role
+    org_id : int
+    org_name : str
+    team_id : int
+    team_name : str
     model_config = ConfigDict(from_attributes = True)
 	
 class TokenResponse(BaseModel):
