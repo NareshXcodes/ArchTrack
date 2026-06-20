@@ -14,7 +14,7 @@ from app.models.votes import Vote
 from app.models.comments import Comment
 from app.models.reviewcomments import ReviewComment
 from app.models.decisionaudits import DecisionAudit
-from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes,ReviewerAssignments, Organizations
+from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes,ReviewerAssignments, Organizations, Teams
 
 Base.metadata.create_all(bind=engine)
 
@@ -35,6 +35,7 @@ app.include_router(Comments.router)
 app.include_router(Tags.router)
 app.include_router(ReviewerAssignments.router)
 app.include_router(Organizations.router)
+app.include_router(Teams.router)
 
 app.add_middleware(
     CORSMiddleware,
