@@ -302,11 +302,3 @@ def remove_team(id:int, ctx:OrgContext = Depends(get_org_admin_context),db:Sessi
     return Response(
         status_code=status.HTTP_204_NO_CONTENT
     )
-
-
-
-
-
-
-
-
