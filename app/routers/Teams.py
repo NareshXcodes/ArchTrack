@@ -1,8 +1,6 @@
 from datetime import datetime, timezone
-from email.policy import HTTP
-
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends, HTTPException,status
+from fastapi import APIRouter, Depends, HTTPException,status, Response
 from app.db.database import SessionDB, get_db
 from app.models.teams import Team
 from app.models.users import User
@@ -218,6 +216,92 @@ def tranfer_team_admin(id:int,payload: TransferAdminRequest,ctx:OrgContext = Dep
         created_at=team.created_at
     )
 
+@router.delete("/{id}/members/{user_id}")
+def remove_team_members(id:int,user_id:int,ctx: OrgContext = Depends(get_team_admin_context),db: Session = Depends(get_db)):
+    team = db.query(Team).filter(Team.id == id,Team.org_id == ctx.org_id).first()
+
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Team not found"
+        )
+
+    if not ctx.is_org_admin and ctx.team_id != team.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Team not found"
+        )
+
+    user = db.query(User).filter(User.id==user_id,User.org_id == ctx.org_id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    if user.team_id != team.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User does not belong to this team"
+        )
+
+    if user.id == team.admin_id:
+
+        member_count = len(team.members)
+
+        if member_count == 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="You are the only member. Delete the team instead."
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Transfer admin rights before leaving. Use PATCH /teams/{id}/transfer-admin."
+        )
+
+    if user.role == "org_admin":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Organization admins cannot be removed from a team."
+        )
+
+    if user.role in ["team_admin","architect","reviewer"]:
+        user.role = "developer"
+
+    user.team_id = None
+
+    db.commit()
+
+    return {
+        "message": "Member removed successfully"
+    }
+
+
+@router.delete("/{id}",status_code=status.HTTP_204_NO_CONTENT)
+def remove_team(id:int, ctx:OrgContext = Depends(get_org_admin_context),db:Session=Depends(get_db)):
+    team = db.query(Team).filter(Team.id == id,Team.org_id == ctx.org_id).first()
+
+    if not team:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Team not found"
+        )
+
+    member_count = len(team.members)
+
+    if member_count > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Remove all members before deleting team."
+        )
+
+    db.delete(team)
+    db.commit()
+    return Response(
+        status_code=status.HTTP_204_NO_CONTENT
+    )
 
 
 
