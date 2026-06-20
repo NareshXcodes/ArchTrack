@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Annotated, Literal
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 InviteRole = Literal[
     "architect",
@@ -30,4 +30,5 @@ class InvitePreview(BaseModel):
     role : InviteRole
     invited_by_email : str
     expires_at :  datetime
+    model_config = ConfigDict(from_attributes=True)
 

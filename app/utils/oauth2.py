@@ -14,8 +14,8 @@ def get_current_user(db:SessionDB , token: str = Depends(oauth2_schema)):
     )
 
     token_data = verify_access_token(token, credential_exception)
-    user = db.query(User).filter(User.email == token_data).first()
+    user = db.query(User).filter(User.id == token_data).first()
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        credential_exception
     return user

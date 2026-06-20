@@ -1,8 +1,11 @@
+from fastapi import Depends
 from sqlalchemy.orm import Session
+from app.db.database import get_db
 from app.models.decisions import Decision
 from app.models.projects import Project
 from app.models.users import User
 from app.models.teams import Team
+from app.utils.context import OrgContext, get_org_context
 
 class OrgScopedQuery:
     def __init__(self,db:Session,org_id:int,team_id:int | None,is_org_admin:bool):
@@ -47,4 +50,12 @@ class OrgScopedQuery:
             query = query.filter(Team.id == self.team_id)
 
         return query
-    
+
+def get_scoped_query(ctx: OrgContext = Depends(get_org_context),db: Session =Depends(get_db)):
+
+    return OrgScopedQuery(
+        db = db,
+        org_id = ctx.org_id,
+        team_id=ctx.team_id,
+        is_org_admin=ctx.is_org_admin,
+    )

@@ -9,9 +9,13 @@ class User(Base):
     __tablename__ = "users"
 
     id : Mapped[int] = mapped_column(Integer , primary_key = True , index = True)
+
     email : Mapped[str] = mapped_column(String, unique=True , nullable=False,index=True)
+
     password : Mapped[str] = mapped_column(String,nullable=False)
+
     role :  Mapped[str] = mapped_column(String, default="developer", nullable=False)
+    
     created_at : Mapped[datetime] = mapped_column(
         DateTime(timezone=True) , 
         server_default = func.now()
@@ -74,12 +78,12 @@ class User(Base):
         back_populates="inviter"
     )
 
-    team : Mapped["Team"] = relationship(
+    team : Mapped["Team | None"] = relationship(
         "Team",
         back_populates="members"
     )
 
-    organization: Mapped["Organization"] = relationship(
+    organization: Mapped["Organization | None"] = relationship(
         "Organization",
         back_populates="users"
     )
