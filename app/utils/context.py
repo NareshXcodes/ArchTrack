@@ -33,3 +33,12 @@ def get_team_admin_context(ctx:OrgContext=Depends(get_org_context)) -> OrgContex
         )
 
     return ctx
+
+def get_org_admin_context(ctx:OrgContext=Depends(get_org_context)) -> OrgContext:
+    if ctx.user.role not in ["org_admin"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Organization admin access required"
+        )
+
+    return ctx
