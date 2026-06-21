@@ -3,16 +3,17 @@ from app.schemas.vote import VoteCreate , VoteResult
 from fastapi import APIRouter,status,HTTPException,Depends,Response
 from app.utils.oauth2 import get_current_user
 from app.models.users import User
-from app.models.decisions import Decision
+from app.models.decisions import Decision, StatusEnum
 from app.models.votes import Vote
 from app.models.options import Option
 from sqlalchemy import func
+from app.utils.org_query import OrgScopedQuery, get_scoped_query
 
 router = APIRouter(tags=['Votes'])
 
 @router.post("/decisions/{decision_id}/vote",response_model=VoteResult)
-def modify_vote(decision_id:int,new_vote:VoteCreate,db:SessionDB,current_user: User = Depends(get_current_user)):
-    fetch_decision = db.query(Decision).filter(Decision.id == decision_id).first()
+def modify_vote(decision_id:int,new_vote:VoteCreate,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    fetch_decision = sq.decisions().filter(Decision.id == decision_id).first()
 
     if not fetch_decision:
         raise HTTPException(
@@ -20,7 +21,13 @@ def modify_vote(decision_id:int,new_vote:VoteCreate,db:SessionDB,current_user: U
             detail="Decision Not Found"
         )
 
-    fetch_options = db.query(Option).filter(Option.id == new_vote.option_id).first()
+    if fetch_decision.status != StatusEnum.proposed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is only allowed while decision is proposed"
+        )
+
+    fetch_options = sq.db.query(Option).join(Decision).filter(Option.id == new_vote.option_id,Decision.id == decision_id).first()
 
     if not fetch_options:
         raise HTTPException(
@@ -28,26 +35,19 @@ def modify_vote(decision_id:int,new_vote:VoteCreate,db:SessionDB,current_user: U
             detail="Option Not Found"
         )
 
-    #check decision hold the option or not
-    if fetch_decision.id != fetch_options.decision_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Option not belong to required decision"
-        )
-
-    existing_vote = db.query(Vote).filter(Vote.user_id == current_user.id,Vote.decision_id == decision_id).first()
+    existing_vote = sq.db.query(Vote).filter(Vote.user_id == sq.user.id,Vote.decision_id == decision_id).first()
 
     if existing_vote:
         existing_vote.option_id = new_vote.option_id
-        db.commit()
-        db.refresh(existing_vote)
+        sq.db.commit()
+        sq.db.refresh(existing_vote)
     else:
-        vote = Vote(**new_vote.model_dump() , decision_id = decision_id,user_id=current_user.id)
-        db.add(vote)
-        db.commit()
-        db.refresh(vote)
+        vote = Vote(**new_vote.model_dump() , decision_id = decision_id,user_id=sq.user.id)
+        sq.db.add(vote)
+        sq.db.commit()
+        sq.db.refresh(vote)
 
-    vote_count =  db.query(func.count(Vote.id)).filter(Vote.option_id == new_vote.option_id).scalar()
+    vote_count =  sq.db.query(func.count(Vote.id)).filter(Vote.option_id == new_vote.option_id).scalar()
 
     return VoteResult(
         option_id = new_vote.option_id,
@@ -56,8 +56,22 @@ def modify_vote(decision_id:int,new_vote:VoteCreate,db:SessionDB,current_user: U
 
 
 @router.delete("/decisions/{decision_id}/vote",status_code=status.HTTP_204_NO_CONTENT)
-def remove_vote(decision_id:int,db:SessionDB,current_user: User = Depends(get_current_user)):
-    fetch_vote = db.query(Vote).filter(Vote.user_id == current_user.id , Vote.decision_id == decision_id).first()
+def remove_vote(decision_id:int,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    fetch_decision = sq.decisions().filter(Decision.id == decision_id).first()
+    
+    if not fetch_decision:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Decision Not Found"
+        )
+    
+    if fetch_decision.status != StatusEnum.proposed:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Voting is closed for this decision"
+        )
+
+    fetch_vote = sq.db.query(Vote).filter(Vote.user_id == sq.user.id , Vote.decision_id == decision_id).first()
 
     if not fetch_vote:
         raise HTTPException(
@@ -65,8 +79,8 @@ def remove_vote(decision_id:int,db:SessionDB,current_user: User = Depends(get_cu
             detail="Vote not found"
         )
 
-    db.delete(fetch_vote)
-    db.commit()
+    sq.db.delete(fetch_vote)
+    sq.db.commit()
     return Response(
         status_code=status.HTTP_204_NO_CONTENT
     )
