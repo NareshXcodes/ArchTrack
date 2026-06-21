@@ -5,6 +5,7 @@ from datetime import datetime
 class ProjectBase(BaseModel):
     name : str
     description : str
+    team_id : Optional[int]
 
 class ProjectCreate(ProjectBase):
     pass
