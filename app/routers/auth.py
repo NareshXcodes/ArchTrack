@@ -1,6 +1,4 @@
 from datetime import datetime, timezone
-from email.policy import HTTP
-
 from app.models.invites import Invite
 from app.models.organizations import Organization
 from app.models.teams import Team
@@ -13,7 +11,7 @@ from app.utils.oauth2 import get_current_user
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from app.utils.jwt import create_access_token
 from app.utils.hashing import hashed_password , verifying_password
-from app.schemas.user import UserCreate , UserResponse , TokenResponse
+from app.schemas.user import  UserResponse , TokenResponse
 
 
 router = APIRouter(tags=['Authentication'])
