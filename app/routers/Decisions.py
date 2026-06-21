@@ -13,15 +13,15 @@ from app.models.tags import DecisionTag , Tag
 from app.models.projects import Project
 from datetime import datetime , timezone
 from sqlalchemy import func
+from app.utils.org_query import OrgScopedQuery, get_scoped_query
 from app.utils.workflow import validate_transition
 from typing import List, Optional
-from app.utils.permissions import ARCHITECTS
 
 router = APIRouter(tags=['Decisions'])
 
 @router.post("/projects/{project_id}/decisions", response_model=DecisionResponse ,status_code=status.HTTP_201_CREATED)
-def create_decision(project_id:int, new_decision : DecisionCreate,db:SessionDB,current_user: User = Depends(ARCHITECTS)):
-    project_data = db.query(Project).filter(Project.id == project_id).first()
+def create_decision(project_id:int, new_decision : DecisionCreate,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    project_data = sq.projects().filter(Project.id == project_id).first()
 
     if not project_data:
         raise HTTPException(
@@ -29,45 +29,45 @@ def create_decision(project_id:int, new_decision : DecisionCreate,db:SessionDB,c
             detail="Project Not Found"
         )
 
-    if project_data.owner_id != current_user.id:
+    if sq.user.role not in ("architect","team_admin","org_admin"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not Authorized"
         )
-
+    
     decision = Decision(
         title=new_decision.title,
         context=new_decision.context,
         decision_made=new_decision.decision_made,
         consequences=new_decision.consequences,
         project_id=project_data.id,
-        author_id=current_user.id
+        author_id=sq.user.id
     )
 
-    db.add(decision)
-    db.flush()
+    sq.db.add(decision)
+    sq.db.flush()
 
     for tag_name in new_decision.tags:
         tag_name = tag_name.strip().lower()
-        tag = db.query(Tag).filter(Tag.name == tag_name).first()
+        tag = sq.db.query(Tag).filter(Tag.name == tag_name).first()
 
         if not tag:
             tag = Tag(name=tag_name)
-            db.add(tag)
-            db.flush()
+            sq.db.add(tag)
+            sq.db.flush()
 
         decision_tag = DecisionTag(decision_id = decision.id, tag_id = tag.id)
 
-        db.add(decision_tag)
+        sq.db.add(decision_tag)
 
-    db.commit()
-    db.refresh(decision)
+    sq.db.commit()
+    sq.db.refresh(decision)
     return decision
 
 
 @router.get("/projects/{project_id}/decisions",response_model=List[DecisionResponse])
-def all_decisions(project_id:int,db:SessionDB,tags: Optional[str] = None, decision_status: Optional[str]= None,current_user: User = Depends(get_current_user)):
-    project_data = db.query(Project).filter(Project.id == project_id, Project.owner_id == current_user.id).first()
+def all_decisions(project_id:int,tags: Optional[str] = None, decision_status: Optional[str]= None,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    project_data = sq.projects().filter(Project.id == project_id).first()
     
     if not project_data:
         raise HTTPException(
@@ -75,16 +75,10 @@ def all_decisions(project_id:int,db:SessionDB,tags: Optional[str] = None, decisi
             detail="Project Not Found"
         )
     
-    query = db.query(Decision).filter(Decision.project_id == project_id)
+    query = sq.decisions(project_id)
 
     if decision_status:
-        valid_status=[
-            "proposed",
-            "under_review",
-            "accepted",
-            "deprecated",
-            "superseded"
-        ]
+        valid_status=[Status.value for Status in StatusEnum]
 
         decision_status = decision_status.lower()
         if decision_status not in valid_status:
@@ -93,7 +87,7 @@ def all_decisions(project_id:int,db:SessionDB,tags: Optional[str] = None, decisi
                 detail="Status value Invalid"
             )
         
-        query = query.filter(Decision.status == decision_status)
+        query = query.filter(Decision.status == StatusEnum(decision_status))
 
     if tags:
         query =  query.join(Decision.tags).filter(Tag.name == tags.lower())
@@ -103,8 +97,8 @@ def all_decisions(project_id:int,db:SessionDB,tags: Optional[str] = None, decisi
 
 
 @router.get("/decisions/{id}",response_model=DecisionDetailResponse)
-def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_current_user)):
-    fetch_decision = db.query(Decision).filter(Decision.id == id).first()
+def get_decision_detail(id:int, sq: OrgScopedQuery = Depends(get_scoped_query)):
+    fetch_decision = sq.decisions().filter(Decision.id == id).first()
 
     if not fetch_decision:
         raise HTTPException(
@@ -112,19 +106,14 @@ def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_c
             detail="Decision Not Found"
         )
 
-    if current_user.id != fetch_decision.author_id:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not Authorized"
-        )
 
-    user_vote = db.query(Vote).filter(Vote.user_id == current_user.id,Vote.decision_id == fetch_decision.id).first()
+    user_vote = sq.db.query(Vote).filter(Vote.user_id == sq.user.id,Vote.decision_id == fetch_decision.id).first()
 
     options_response = []
     
     for option in fetch_decision.options:
 
-        vote_count = db.query(func.count(Vote.id)).filter(Vote.option_id == option.id).scalar()
+        vote_count = sq.db.query(func.count(Vote.id)).filter(Vote.option_id == option.id).scalar()
 
         options_response.append(
             OptionWithVotes(
@@ -150,7 +139,7 @@ def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_c
         context=fetch_decision.context,
         decision_made=fetch_decision.decision_made,
         consequences=fetch_decision.consequences,
-        status = fetch_decision.status,
+        status = fetch_decision.status.value,
         author_id = fetch_decision.author_id,
         project_id = fetch_decision.project_id,
         tags =[
@@ -167,8 +156,8 @@ def get_decision_detail(id:int, db:SessionDB, current_user: User = Depends(get_c
 
 
 @router.put("/decisions/{id}",response_model=DecisionResponse)
-def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,current_user: User = Depends(ARCHITECTS)):
-    query = db.query(Decision).filter(Decision.id == id)
+def update_decisions(id: int,updated_decision :DecisionUpdate ,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    query = sq.decisions().filter(Decision.id == id)
     update_fetch_decision = query.first()
     if not update_fetch_decision:
         raise HTTPException(
@@ -176,7 +165,7 @@ def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,curr
             detail="Decision not Found"
         )
 
-    if current_user.role == "architect" and update_fetch_decision.author_id != current_user.id:
+    if sq.user.role not in ("team_admin","org_admin") and sq.user.id != update_fetch_decision.author_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not Authorized"
@@ -189,16 +178,15 @@ def update_decisions(id: int,updated_decision :DecisionUpdate ,db:SessionDB,curr
         )
 
     update_data = updated_decision.model_dump(exclude_unset=True)
-    update_data["updated_at"] = datetime.now(timezone.utc)
     query.update(update_data,synchronize_session=False)
-    db.commit()
-    db.refresh(update_fetch_decision)
+    sq.db.commit()
+    sq.db.refresh(update_fetch_decision)
     return update_fetch_decision
     
 
 @router.patch("/decisions/{id}/status",response_model=DecisionResponse)
-def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,current_user: User = Depends(get_current_user)):
-    query = db.query(Decision).filter(Decision.id == id)
+def update_decision_status(id:int,updated_status:StatusUpdate,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    query = sq.decisions().filter(Decision.id == id)
     fetch_update_decision = query.first()
 
     if not fetch_update_decision:
@@ -208,20 +196,23 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
         )
     current_status = fetch_update_decision.status.value
     new_status = updated_status.status
-    if current_user.role == "admin":
+    if sq.user.role == "org_admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Use /admin/decisions/{id}/override"
         )
-    elif current_user.role == "architect":
+    elif sq.user.role == "team_admin":
+        validate_transition(current_status,new_status)
+        fetch_update_decision.status = StatusEnum(new_status)
+    elif sq.user.role == "architect":
         # proposed -> under_review
         # rejected -> proposed
-        if current_user.id != fetch_update_decision.author_id:
+        if sq.user.id != fetch_update_decision.author_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not Authorized"
             )
-        if current_status == "proposed" or current_status == "rejected":
+        if (current_status == "proposed" and new_status == "under_review") or (current_status == "rejected" and new_status=="proposed"):
             validate_transition(current_status,new_status)
             fetch_update_decision.status = StatusEnum(new_status)
         else:
@@ -229,10 +220,10 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Architect cannot perform this transition"
             )
-    elif current_user.role == "reviewer":
+    elif sq.user.role == "reviewer":
         #under_review -> accepted
         #under_review -> rejected
-        if current_status == "under_review" and new_status != "proposed":
+        if current_status == "under_review" and new_status in ("accepted","rejected"):
             validate_transition(current_status,new_status)
             fetch_update_decision.status = StatusEnum(new_status)
         else:
@@ -246,17 +237,15 @@ def update_decision_status(id:int,updated_status:StatusUpdate,db:SessionDB,curre
             detail="Insufficient permissions"
         )
 
-    fetch_update_decision.updated_at = datetime.now(timezone.utc)
-
-    db.commit()
-    db.refresh(fetch_update_decision)
+    sq.db.commit()
+    sq.db.refresh(fetch_update_decision)
 
     return fetch_update_decision
 
 
 @router.delete("/decisions/{id}",status_code=status.HTTP_204_NO_CONTENT)
-def delete_decision(id:int,db:SessionDB,current_user: User = Depends(get_current_user)):
-    query = db.query(Decision).filter(Decision.id == id)
+def delete_decision(id:int,sq: OrgScopedQuery = Depends(get_scoped_query)):
+    query = sq.decisions().filter(Decision.id == id)
     fetch_decision = query.first()
 
     if not fetch_decision:
@@ -265,14 +254,14 @@ def delete_decision(id:int,db:SessionDB,current_user: User = Depends(get_current
             detail="decision not found"
         )
 
-    if current_user.id != fetch_decision.author_id:
+    if sq.user.role not in ("team_admin","org_admin") and sq.user.id != fetch_decision.author_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not Authorized"
         )
 
-    db.delete(fetch_decision)
-    db.commit()
+    sq.db.delete(fetch_decision)
+    sq.db.commit()
     return Response(
         status_code=status.HTTP_204_NO_CONTENT
     )

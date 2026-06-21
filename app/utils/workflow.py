@@ -2,7 +2,7 @@ from fastapi import HTTPException
 
 ALLOWED_TRANSITIONS = {
     "proposed":     ["under_review"],
-    "under_review": ["accepted", "rejected", "proposed"],
+    "under_review": ["accepted", "rejected"],
     "accepted":     ["deprecated", "superseded"],
     "rejected":     ["proposed"],   # can be revised and resubmitted
     "deprecated":   [],

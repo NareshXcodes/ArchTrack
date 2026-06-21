@@ -3,11 +3,7 @@ from app.models.teams import Team
 from app.schemas.project import ProjectCreate , ProjectResponse , ProjectUpdate
 from app.schemas.misc import ProjectSummary
 from fastapi import APIRouter,status,HTTPException,Depends, Response
-from app.utils.context import OrgContext
-from app.utils.oauth2 import get_current_user
-from app.models.users import User
 from app.models.projects import Project
-from app.models.decisions import Decision
 from collections import Counter
 from typing import List
 

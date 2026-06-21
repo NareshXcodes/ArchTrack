@@ -11,7 +11,7 @@ class StatusEnum(str,PyEnum):
     under_review = "under_review"
     accepted = "accepted"
     deprecated = "deprecated"
-    suspended = "suspended"
+    superseded = "superseded"
     rejected = "rejected"
 
 
@@ -69,6 +69,7 @@ class Decision(Base):
     # projects
     project_id : Mapped[int] = mapped_column(
         ForeignKey("projects.id",ondelete="CASCADE") , 
+        index=True,
         nullable=False
     )
 
@@ -80,6 +81,7 @@ class Decision(Base):
     #users
     author_id : Mapped[int] = mapped_column(
         ForeignKey("users.id",ondelete="CASCADE"),
+        index=True,
         nullable=False
     )
 

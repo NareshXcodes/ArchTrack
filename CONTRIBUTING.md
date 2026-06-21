@@ -40,6 +40,12 @@ team = db.query(Team).filter(
 ).first()
 ```
 
+Do not use raw `db.query()` for tenant-scoped resources
+(Project, Decision, Team, User, Organization).
+
+Global resources (e.g. Tag) may be queried directly.
+
+
 ## Enforcement
 
 Pull requests introducing raw `db.query(...)` calls in route handlers should be rejected during code review.
