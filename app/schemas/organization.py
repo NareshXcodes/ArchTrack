@@ -1,6 +1,6 @@
 from datetime import datetime
 from pydantic import BaseModel, ConfigDict
-from typing import List, Annotated, Field
+from typing import List
 from app.schemas.team import TeamResponse
 
 class OrgCreate(BaseModel):

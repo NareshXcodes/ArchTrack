@@ -131,6 +131,8 @@ class Decision(Base):
     reviewers: Mapped[list["User"]] = relationship(
         "User",
         secondary="decision_reviewers",
+        primaryjoin="Decision.id == DecisionReviewer.decision_id",
+        secondaryjoin="User.id == DecisionReviewer.reviewer_id",
         back_populates="assigned_decisions"
     )
 

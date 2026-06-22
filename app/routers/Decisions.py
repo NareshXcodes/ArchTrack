@@ -254,7 +254,7 @@ def delete_decision(id:int,sq: OrgScopedQuery = Depends(get_scoped_query)):
             detail="decision not found"
         )
 
-    if sq.user.role not in ("team_admin","org_admin") and sq.user.id != fetch_decision.author_id:
+    if sq.user.id != fetch_decision.author_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not Authorized"

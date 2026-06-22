@@ -1,6 +1,5 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status,Response
-from app.db.database import SessionDB
 from app.models.decisions import Decision, StatusEnum
 from app.models.projects import Project
 from app.models.teams import Team

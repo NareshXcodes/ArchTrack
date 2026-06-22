@@ -42,7 +42,8 @@ class Team(Base):
 
     members : Mapped[List["User"]] = relationship(
         "User",
-        back_populates="team"
+        back_populates="team",
+        foreign_keys="User.team_id"
     )
 
     invites: Mapped[list["Invite"]] = relationship(

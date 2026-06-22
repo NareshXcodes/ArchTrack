@@ -48,6 +48,14 @@ class OrgScopedQuery:
 
         return query
 
+    def projects(self):
+        query = self.db.query(Project).filter(Project.org_id == self.org_id)
+
+        if not self.is_org_admin:
+            query = query.filter(Project.team_id == self.team_id)
+
+        return query
+
 def get_scoped_query(ctx: OrgContext = Depends(get_org_context),db: Session =Depends(get_db)):
 
     return OrgScopedQuery(

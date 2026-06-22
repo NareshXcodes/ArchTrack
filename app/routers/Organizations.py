@@ -1,9 +1,10 @@
 import re
-
+from sqlalchemy.orm import Session
 from fastapi import APIRouter, Depends, HTTPException, status
-from app.db.database import SessionDB, get_db
+from app.db.database import get_db
 from app.models.organizations import Organization
 from app.schemas.organization import OrgResponse, OrgUpdate, OrgDetailResponse
+from app.schemas.team import TeamResponse
 from app.utils.context import OrgContext, get_org_admin_context, get_org_context
 from app.utils.org_query import OrgScopedQuery, get_scoped_query
 
@@ -30,18 +31,29 @@ def get_my_org_detail(ctx: OrgContext = Depends(get_org_context),sq : OrgScopedQ
         slug = org.slug,
         created_by = org.created_by,
         created_at = org.created_at,
-        teams = teams,
+        teams = [
+            TeamResponse(
+                id=team.id,
+                name=team.name,
+                org_id=team.org_id,
+                admin_id=team.admin_id,
+                member_count=len(team.members),
+                transferred_at=team.transferred_at,
+                created_at=team.created_at
+            )
+            for team in teams
+        ],
         total_members = total_members
     )
 
 @router.put("/me",response_model=OrgResponse)
-def update_org_detail(updated_org : OrgUpdate,ctx: OrgContext = Depends(get_org_admin_context),db:SessionDB = Depends(get_db)):
+def update_org_detail(updated_org : OrgUpdate,ctx: OrgContext = Depends(get_org_admin_context),db:Session = Depends(get_db)):
     org = ctx.user.organization
 
     updated_slug = updated_org.slug
 
     if updated_slug:
-        if not re.match(updated_slug , r"^[a-z0-9-]+$"):
+        if not re.match(r"^[a-z0-9-]+$",updated_slug):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid slug"

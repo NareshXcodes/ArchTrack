@@ -59,6 +59,8 @@ class User(Base):
     assigned_decisions: Mapped[list["Decision"]] = relationship(
         "Decision",
         secondary="decision_reviewers",
+        primaryjoin="User.id == DecisionReviewer.reviewer_id",
+        secondaryjoin="Decision.id == DecisionReviewer.decision_id",
         back_populates="reviewers"
     )
 
@@ -80,7 +82,8 @@ class User(Base):
 
     team : Mapped["Team | None"] = relationship(
         "Team",
-        back_populates="members"
+        back_populates="members",
+        foreign_keys=[team_id]
     )
 
     organization: Mapped["Organization | None"] = relationship(

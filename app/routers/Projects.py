@@ -41,7 +41,7 @@ def createProject(payload : ProjectCreate,sq: OrgScopedQuery = Depends(get_scope
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="User is not assigned to a team"
             )
-        team_id = team.id
+        team_id = sq.team_id
 
     project = Project(
         name=payload.name,

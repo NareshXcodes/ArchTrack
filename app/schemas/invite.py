@@ -17,6 +17,7 @@ class InviteResponse(InviteCreate):
     org_id : int
     team_id : int
     invited_by : int
+    token : str
     expires_at : datetime
     is_used : bool
 

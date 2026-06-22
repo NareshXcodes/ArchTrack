@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
-from fastapi import APIRouter, Depends, HTTPException, Response, Session, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
+from sqlalchemy.orm import Session
 from app.db.database import get_db
 from app.models.invites import Invite
 from app.models.teams import Team
@@ -75,6 +76,7 @@ def create_invite(team_id:int,invites:InviteCreate,ctx:OrgContext=Depends(get_te
         role=invite.role,
         org_id=invite.org_id,
         team_id=invite.team_id,
+        token=token,
         invited_by=invite.invited_by,
         expires_at=invite.expires_at,
         is_used=invite.used_at is not None,

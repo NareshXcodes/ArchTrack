@@ -12,7 +12,7 @@ from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 from app.utils.jwt import create_access_token
 from app.utils.hashing import hashed_password , verifying_password
 from app.schemas.user import  UserResponse , TokenResponse
-
+import traceback
 
 router = APIRouter(tags=['Authentication'])
 
@@ -57,6 +57,7 @@ def bootstrap(payload: BootstrapRequest,db:SessionDB):
         org = Organization(
             name=payload.org_name,
             slug=payload.org_slug,
+            created_by=user.id
         )
 
         db.add(org)
@@ -64,7 +65,7 @@ def bootstrap(payload: BootstrapRequest,db:SessionDB):
 
         team = Team(
             name=payload.default_team_name,
-            org_id=payload.org_id,
+            org_id=org.id,
             admin_id=user.id
         )
         db.add(team)
@@ -72,7 +73,7 @@ def bootstrap(payload: BootstrapRequest,db:SessionDB):
 
         user.org_id = org.id
         user.team_id = team.id
-        org.created_by = user.id
+
         db.commit()
 
         access_token = create_access_token(
@@ -84,6 +85,7 @@ def bootstrap(payload: BootstrapRequest,db:SessionDB):
             "token_type" : "bearer"
         }
     except Exception:
+        traceback.print_exc()
         db.rollback()
 
         raise HTTPException(
