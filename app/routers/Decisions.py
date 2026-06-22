@@ -178,9 +178,35 @@ def update_decisions(id: int,updated_decision :DecisionUpdate ,sq: OrgScopedQuer
         )
 
     update_data = updated_decision.model_dump(exclude_unset=True)
-    query.update(update_data,synchronize_session=False)
+    # Extract tags before setattr
+    tag_names = update_data.pop("tags", None)
+
+    # Update normal fields
+    for field, value in update_data.items():
+        setattr(update_fetch_decision, field, value)
+
+    # Update tags separately
+    if tag_names is not None:
+        tag_objects = []
+
+        for tag_name in tag_names:
+
+            tag = sq.db.query(Tag).filter(
+                Tag.name == tag_name
+            ).first()
+
+            if not tag:
+                tag = Tag(name=tag_name)
+                sq.db.add(tag)
+                sq.db.flush()
+
+            tag_objects.append(tag)
+
+        update_fetch_decision.tags = tag_objects
+
     sq.db.commit()
     sq.db.refresh(update_fetch_decision)
+
     return update_fetch_decision
     
 

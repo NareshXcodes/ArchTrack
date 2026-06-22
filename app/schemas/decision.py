@@ -15,11 +15,11 @@ class DecisionCreate(DecisionBase):
     tags : List[str] = []
 
 class DecisionUpdate(BaseModel):
-    title: Optional[str]
-    context : Optional[str]
-    decision_made : Optional[str]
-    consequences: Optional[str]
-    tags : Optional[List[str]]
+    title: Optional[str] = None
+    context : Optional[str] = None
+    decision_made : Optional[str] = None
+    consequences: Optional[str] = None
+    tags : Optional[List[str]] = None
 
 
 class OptionVoteCount(BaseModel):
