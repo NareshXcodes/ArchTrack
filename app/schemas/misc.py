@@ -2,7 +2,7 @@ from pydantic import BaseModel , ConfigDict
 from typing import List , Literal,Dict
 
 class StatusUpdate(BaseModel):
-    status : Literal["proposed","under_review","accepted","deprecated","superseded"]
+    status : Literal["proposed","under_review","accepted","deprecated","superseded","rejected"]
 
 class ProjectSummary(BaseModel):
     total_decisions : int
