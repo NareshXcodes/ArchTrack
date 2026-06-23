@@ -26,6 +26,7 @@ def root():
     return {"message" : "Welcome to the ADR Manager APP"}
 
 
+
 app.include_router(auth.router)
 app.include_router(admin.router)
 app.include_router(Organizations.router)

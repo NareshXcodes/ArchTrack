@@ -19,7 +19,20 @@ router = APIRouter(prefix="/admin",tags=['Admin'])
 def fetch_users_with_roles(sq: OrgScopedQuery = Depends(get_scoped_query)):
     fetch_users = sq.users().all()
 
-    return fetch_users
+    return [
+        UserResponse(
+            id=user.id,
+            email=user.email,
+            created_at=user.created_at,
+            role=user.role,
+            org_id=user.org_id,
+            org_name=user.organization.name if user.organization else None,
+            team_id=user.team_id,
+            team_name=user.team.name if user.team else None
+        )
+
+        for user in fetch_users
+    ]
 
 @router.patch("/users/{id}/role",response_model=UserResponse)
 def change_users_role(id:int,new_role:UpdateRole,sq: OrgScopedQuery = Depends(get_scoped_query)):

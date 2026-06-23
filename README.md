@@ -459,6 +459,17 @@ erDiagram
 
 ---
 
+### 📈 Load Testing & Performance Metrics
+
+To evaluate API performance and concurrency handling, the backend was load-tested using Locust against a remote Supabase PostgreSQL database.
+
+- Sustained Throughput: ~40 requests/second (RPS)
+- Concurrent Load Tested: Up to 100 simulated users
+- Observed Failure Rate: 0% at 30 concurrent users; failures at higher loads were caused by Supabase free-tier connection limits rather than application errors.
+- Infrastructure Bottleneck: Encountered `EMAXCONNSESSION` when exceeding the database pool limit of 15 active sessions on Supabase.
+- Authentication Analysis: Identified that every protected route performs a database lookup through JWT-based user resolution (`get_current_user()`), making database connections the primary scaling constraint under heavy load.
+
+---
 ## 🔐 Security & Authentication
 
 ### JWT Token-Based Authentication
