@@ -416,46 +416,11 @@ User (1) ──< (N) Votes
 User (1) ──< (N) Comments
 ```
 
-```mermaid
-erDiagram
-    %% Base Organization and High-Level Scope
-    Organization ||--|{ Teams : manages
-    Organization ||--|{ Users : employs
-    Organization ||--|{ Projects : encompasses
+#### Database Schema : 
 
-    %% Team Context and Onboarding
-    Teams ||--|{ Users : belongs_to
-    Teams ||--|{ Invites : sends_to
+🔗Click the diagram below to open the interactive DrawSQL version.
 
-    %% Project Context
-    Projects ||--|{ Decisions : produces
-
-    %% User Roles/Ownership
-    Users ||--|{ Projects : owns
-    Users ||--|{ Decisions : authors
-    Users ||--|{ Votes : casts
-    Users ||--|{ Comments : writes
-    Users ||--|{ ReviewComments : makes
-
-    %% Decision Details and Lifecycle
-    Decisions ||--|{ Options : provides
-    Decisions ||--|{ Comments : receives
-    Decisions ||--|{ ReviewComments : requires
-    Decisions ||--|{ DecisionAudits : tracks
-
-    %% Option/Voting Interaction
-    Options ||--|{ Votes : gathers
-
-    %% Many-to-Many Relationships (Implemented with Junction Tables)
-
-    %% Decision <-> Tag (N:M)
-    Decisions ||--|{ DecisionTags : has
-    Tags ||--|{ DecisionTags : classifies
-
-    %% Decision <-> User (as reviewers) (N:M)
-    Decisions ||--|{ Reviewers : is_reviewed_by
-    Users ||--|{ Reviewers : acts_as
-```
+[![ArchTrack Database Schema](assets/DB_schema.webp)](https://drawsql.app/teams/naresh-mahapatra/diagrams/archtrack)
 
 ---
 
