@@ -1,5 +1,5 @@
 from fastapi import Depends
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, contains_eager
 from app.db.database import get_db
 from app.models.decisions import Decision
 from app.models.projects import Project
@@ -18,7 +18,7 @@ class OrgScopedQuery:
 
     def decisions(self,project_id:int|None = None):
         query = self.db.query(Decision).join(Project,Project.id == Decision.project_id).filter(Project.org_id == self.org_id)
-
+        
         if not self.is_org_admin:
             query = query.filter(Project.team_id == self.team_id)
 

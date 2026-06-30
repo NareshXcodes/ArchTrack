@@ -13,6 +13,7 @@ from app.models.tags import DecisionTag , Tag
 from app.models.projects import Project
 from datetime import datetime , timezone
 from sqlalchemy import func
+from sqlalchemy.orm import selectinload
 from app.utils.org_query import OrgScopedQuery, get_scoped_query
 from app.utils.workflow import validate_transition
 from typing import List, Optional
@@ -92,7 +93,7 @@ def all_decisions(project_id:int,tags: Optional[str] = None, decision_status: Op
     if tags:
         query =  query.join(Decision.tags).filter(Tag.name == tags.lower())
 
-    all_decision = query.all()
+    all_decision = query.options(selectinload(Decision.project),selectinload(Decision.tags)).all()
     return all_decision
 
 
