@@ -420,7 +420,7 @@ User (1) ──< (N) Comments
 
 🔗Click the diagram below to open the interactive DrawSQL version.
 
-[![ArchTrack Database Schema](assets/DB_schema.webp)](https://drawsql.app/teams/naresh-mahapatra/diagrams/archtrack/embed)
+[![ArchTrack Database Schema](assets/DB_schema.webp)](https://drawsql.app/teams/naresh-mahapatra/diagrams/archtrack)
 
 ---
 
