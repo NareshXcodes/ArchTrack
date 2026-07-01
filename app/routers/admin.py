@@ -12,12 +12,13 @@ from app.utils.org_query import OrgScopedQuery, get_scoped_query
 from typing import List
 from app.schemas.decision import DecisionResponse
 from app.models.decisionaudits import DecisionAudit
+from sqlalchemy.orm import selectinload
 
 router = APIRouter(prefix="/admin",tags=['Admin'])
 
 @router.get("/users",response_model=List[UserResponse])
 def fetch_users_with_roles(sq: OrgScopedQuery = Depends(get_scoped_query)):
-    fetch_users = sq.users().all()
+    fetch_users = sq.users().options(selectinload(User.organization),selectinload(User.team)).all()
 
     return [
         UserResponse(

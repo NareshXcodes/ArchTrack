@@ -120,6 +120,7 @@ class Decision(Base):
         "Tag",
         secondary="decision_tags",
         back_populates="decisions",
+        lazy="selectin"
     )
 
     votes : Mapped[List["Vote"]] = relationship(

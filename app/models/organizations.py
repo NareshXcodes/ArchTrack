@@ -8,7 +8,7 @@ class Organization(Base):
 
     __tablename__="organizations"
 
-    id : Mapped[int] = mapped_column(Integer,primary_key=True)
+    id : Mapped[int] = mapped_column(Integer,primary_key=True,index=True)
 
     name : Mapped[str] = mapped_column(String(100),nullable=False)
 
@@ -21,7 +21,8 @@ class Organization(Base):
     teams : Mapped[List["Team"]] = relationship(
         "Team",
         back_populates="organization",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     invites : Mapped[List["Invite"]] = relationship(
@@ -33,11 +34,13 @@ class Organization(Base):
     users: Mapped[list["User"]] = relationship(
         "User",
         back_populates="organization",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     projects : Mapped[List["Project"]] = relationship(
         "Project",
         back_populates="organization",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )

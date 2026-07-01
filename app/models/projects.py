@@ -51,7 +51,8 @@ class Project(Base):
     decisions : Mapped[List["Decision"]] = relationship(
         "Decision",
         back_populates="project",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     organization : Mapped["Organization"] = relationship(

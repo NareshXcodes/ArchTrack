@@ -35,25 +35,29 @@ class User(Base):
 
     comments: Mapped[list["Comment"]] = relationship(
         "Comment",
-        back_populates="author"
+        back_populates="author",
+        lazy="selectin"
     )
 
     votes : Mapped[List["Vote"]] = relationship(
         "Vote",
         back_populates="user",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     projects : Mapped[List["Project"]] = relationship(
         "Project",
         back_populates="owner",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     decisions : Mapped[List["Decision"]] = relationship(
         "Decision",
         back_populates="author",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
+        lazy="selectin"
     )
 
     assigned_decisions: Mapped[list["Decision"]] = relationship(
@@ -83,10 +87,12 @@ class User(Base):
     team : Mapped["Team | None"] = relationship(
         "Team",
         back_populates="members",
-        foreign_keys=[team_id]
+        foreign_keys=[team_id],
+        lazy="selectin"
     )
 
     organization: Mapped["Organization | None"] = relationship(
         "Organization",
-        back_populates="users"
+        back_populates="users",
+        lazy="selectin"
     )

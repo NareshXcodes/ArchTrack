@@ -7,7 +7,7 @@ from typing import List
 class Team(Base):
     __tablename__ ="teams"
 
-    id : Mapped[int] = mapped_column(Integer, primary_key=True)
+    id : Mapped[int] = mapped_column(Integer, primary_key=True,index=True)
 
     name : Mapped[str] = mapped_column(String(100), nullable=False)
 
@@ -53,5 +53,6 @@ class Team(Base):
 
     projects : Mapped[List["Project"]] = relationship(
         "Project",
-        back_populates="team"
+        back_populates="team",
+        lazy="selectin"
     )
