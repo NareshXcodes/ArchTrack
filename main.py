@@ -28,7 +28,7 @@ app = FastAPI()
 def root():
     return {"message" : "Welcome to the ADR Manager APP"}
 
-@app.get("/health")
+@app.head("/health")
 def checkup():
     return {
         "success" : True,
