@@ -16,6 +16,9 @@ from app.models.reviewcomments import ReviewComment
 from app.models.decisionaudits import DecisionAudit
 from app.routers import auth , Projects, Decisions, Options, Comments, Tags, Votes,ReviewerAssignments, Organizations, Teams, Invites, admin
 
+
+from datetime import datetime
+
 Base.metadata.create_all(bind=engine)
 
 
@@ -25,7 +28,13 @@ app = FastAPI()
 def root():
     return {"message" : "Welcome to the ADR Manager APP"}
 
-
+@app.get("/health")
+def checkup():
+    return {
+        "success" : True,
+        "message" : "Server is Healthy",
+        "timestamp" : datetime.now()
+    }
 
 app.include_router(auth.router)
 app.include_router(admin.router)

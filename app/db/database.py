@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 
 try:
-    engine = create_engine(str(settings.DATABASE_URL), connect_args={"sslmode": "require"}, echo=True)
+    engine = create_engine(str(settings.DATABASE_URL), connect_args={"sslmode": "require"}, echo=False)
     sessionLocal = sessionmaker(bind=engine , autocommit=False, autoflush=False)
 except Exception as e:
     print(f"Database connection Error, Error : {e}")
